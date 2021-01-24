@@ -21,6 +21,13 @@ jobs:
       - name: Zip artifacts
         run: |
           7za a zwift_rainmeter_plugin_x64.zip x64\Release\*.dll
+          
+      - name: Zip artifacts
+        uses: thedoctor0/zip-release@master
+        with:
+          filename: 'zwift_rainmeter_plugin_x64.zip'
+          path: 'x64\Release'
+          exclusions: '*.xml *.pdb'
 
       - name: Create Release
         id: create_release
