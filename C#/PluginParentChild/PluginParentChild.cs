@@ -1,20 +1,160 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Runtime.InteropServices;
-using System.Security.AccessControl;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net.Http;
 using Rainmeter;
-using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Linq;
 using System.Net;
+using System.Web.Script.Serialization;
+using System.Collections.ObjectModel;
+using System.Dynamic;
+using System.Collections;
+using System.Text;
 
 namespace PluginParentChild
 {
+
+    // Src: https://stackoverflow.com/questions/3142495/deserialize-json-into-c-sharp-dynamic-object
+    // Else we would need Newtonsoft Json which would add an additional dll as dependency for the runtime
+    public sealed class DynamicJsonConverter : JavaScriptConverter
+    {
+        public override object Deserialize(IDictionary<string, object> dictionary, Type type, JavaScriptSerializer serializer)
+        {
+            if (dictionary == null)
+                throw new ArgumentNullException("dictionary");
+
+            return type == typeof(object) ? new DynamicJsonObject(dictionary) : null;
+        }
+
+        public override IDictionary<string, object> Serialize(object obj, JavaScriptSerializer serializer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override IEnumerable<Type> SupportedTypes
+        {
+            get { return new ReadOnlyCollection<Type>(new List<Type>(new[] { typeof(object) })); }
+        }
+
+        #region Nested type: DynamicJsonObject
+
+        private sealed class DynamicJsonObject : DynamicObject
+        {
+            private readonly IDictionary<string, object> _dictionary;
+
+            public DynamicJsonObject(IDictionary<string, object> dictionary)
+            {
+                if (dictionary == null)
+                    throw new ArgumentNullException("dictionary");
+                _dictionary = dictionary;
+            }
+
+            public override string ToString()
+            {
+                var sb = new StringBuilder("{");
+                ToString(sb);
+                return sb.ToString();
+            }
+
+            private void ToString(StringBuilder sb)
+            {
+                var firstInDictionary = true;
+                foreach (var pair in _dictionary)
+                {
+                    if (!firstInDictionary)
+                        sb.Append(",");
+                    firstInDictionary = false;
+                    var value = pair.Value;
+                    var name = pair.Key;
+                    if (value is string)
+                    {
+                        sb.AppendFormat("{0}:\"{1}\"", name, value);
+                    }
+                    else if (value is IDictionary<string, object>)
+                    {
+                        new DynamicJsonObject((IDictionary<string, object>)value).ToString(sb);
+                    }
+                    else if (value is ArrayList)
+                    {
+                        sb.Append(name + ":[");
+                        var firstInArray = true;
+                        foreach (var arrayValue in (ArrayList)value)
+                        {
+                            if (!firstInArray)
+                                sb.Append(",");
+                            firstInArray = false;
+                            if (arrayValue is IDictionary<string, object>)
+                                new DynamicJsonObject((IDictionary<string, object>)arrayValue).ToString(sb);
+                            else if (arrayValue is string)
+                                sb.AppendFormat("\"{0}\"", arrayValue);
+                            else
+                                sb.AppendFormat("{0}", arrayValue);
+
+                        }
+                        sb.Append("]");
+                    }
+                    else
+                    {
+                        sb.AppendFormat("{0}:{1}", name, value);
+                    }
+                }
+                sb.Append("}");
+            }
+
+            public override bool TryGetMember(GetMemberBinder binder, out object result)
+            {
+                if (!_dictionary.TryGetValue(binder.Name, out result))
+                {
+                    // return null to avoid exception.  caller can check for null this way...
+                    result = null;
+                    return true;
+                }
+
+                result = WrapResultObject(result);
+                return true;
+            }
+
+            public override bool TryGetIndex(GetIndexBinder binder, object[] indexes, out object result)
+            {
+                if (indexes.Length == 1 && indexes[0] != null)
+                {
+                    if (!_dictionary.TryGetValue(indexes[0].ToString(), out result))
+                    {
+                        // return null to avoid exception.  caller can check for null this way...
+                        result = null;
+                        return true;
+                    }
+
+                    result = WrapResultObject(result);
+                    return true;
+                }
+
+                return base.TryGetIndex(binder, indexes, out result);
+            }
+
+            private static object WrapResultObject(object result)
+            {
+                var dictionary = result as IDictionary<string, object>;
+                if (dictionary != null)
+                    return new DynamicJsonObject(dictionary);
+
+                var arrayList = result as ArrayList;
+                if (arrayList != null && arrayList.Count > 0)
+                {
+                    return arrayList[0] is IDictionary<string, object>
+                        ? new List<object>(arrayList.Cast<IDictionary<string, object>>().Select(x => new DynamicJsonObject(x)))
+                        : new List<object>(arrayList.Cast<object>());
+                }
+
+                return result;
+            }
+        }
+
+        #endregion
+    }
+
     internal class GenericMeasure
     {
         internal enum MeasureType
@@ -73,6 +213,7 @@ namespace PluginParentChild
         internal string user = "";
         internal string password = "";
         internal int pastMonth = 0;
+        internal static JavaScriptSerializer serializer = new JavaScriptSerializer();
         Dictionary<DateTime, double> distanceDict = new Dictionary<DateTime, double>();
 
         HttpClientHandler handler = new HttpClientHandler()
@@ -86,6 +227,7 @@ namespace PluginParentChild
         {
             lapi = api;
             client = new HttpClient(handler);
+            serializer.RegisterConverters(new[] { new DynamicJsonConverter() });
         }
 
         internal override void Dispose()
@@ -111,7 +253,7 @@ namespace PluginParentChild
                 if (response.IsSuccessStatusCode)
                 {
                     var json = response.Content.ReadAsStringAsync().Result;
-                    dynamic result = JsonConvert.DeserializeObject(json);
+                    dynamic result = serializer.Deserialize(json, typeof(object));
                     return result.access_token;
                 }
             }
@@ -139,7 +281,7 @@ namespace PluginParentChild
                 if (responseProfile.IsSuccessStatusCode)
                 {
                     var jsonProfile = responseProfile.Content.ReadAsStringAsync().Result;
-                    dynamic resultProfile = JsonConvert.DeserializeObject(jsonProfile);
+                    dynamic resultProfile = serializer.Deserialize(jsonProfile, typeof(object));
 
                     List<dynamic> result = new List<dynamic>();
                     string url = "https://us-or-rly101.zwift.com/api/profiles/" + resultProfile.id + "/activities/feed";
@@ -151,13 +293,10 @@ namespace PluginParentChild
                         if (responseFeed.IsSuccessStatusCode)
                         {
                             var jsonFeed = responseFeed.Content.ReadAsStringAsync().Result;
-                            dynamic resultFeed = JsonConvert.DeserializeObject<List<dynamic>>(jsonFeed, new JsonSerializerSettings()
-                            {
-                                DateTimeZoneHandling = DateTimeZoneHandling.Utc
-                            });
+                            dynamic resultFeed = serializer.Deserialize(jsonFeed, typeof(List<object>));
                             result.AddRange(resultFeed);
                             if (resultFeed.Count < 1 || !responseFeed.Headers.Contains("Link")) break;
-                            url = responseFeed.Headers.GetValues("Link").FirstOrDefault().Replace("<","").Replace(">; rel=\"next\"", "");
+                            url = responseFeed.Headers.GetValues("Link").FirstOrDefault().Replace("<", "").Replace(">; rel=\"next\"", "");
                         }
                         else
                         {
@@ -254,14 +393,13 @@ namespace PluginParentChild
             pastMonth = api.ReadInt("pastMonth", 0);
 
             var feedArr = fetchZwiftFeed();
-             
+
             try
             {
                 foreach (var activity in feedArr)
                 {
                     CultureInfo provider = CultureInfo.InvariantCulture;
-                    string startStr = activity.startDate;
-                    DateTime start = DateTime.ParseExact(startStr, "MM/dd/yyyy HH:mm:ss", provider);
+                    DateTime start = DateTime.Parse(activity.startDate);
                     var month = new DateTime(start.Year, start.Month, 1);
                     if (!distanceDict.ContainsKey(month)) distanceDict[month] = 0;
                     distanceDict[month] += Convert.ToDouble(activity.distanceInMeters);
@@ -287,21 +425,17 @@ namespace PluginParentChild
                     {
                         return distanceDict[new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)];
                     }
-
                 case MeasureType.lastX:
                     {
                         var date = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-pastMonth);
                         return distanceDict[date];
                     }
-
                 case MeasureType.min:
                     {
                         return distanceDict.Values.Min();
                     }
-
                 case MeasureType.max:
                     {
-
                         return distanceDict.Values.Max();
                     }
             }
