@@ -1,0 +1,12 @@
+name: Build
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v1
+        
+      - name: Build
+        run: .\C#\build.bat
