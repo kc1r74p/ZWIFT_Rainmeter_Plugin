@@ -19,11 +19,10 @@ jobs:
         run: .\C#\build.bat
         
       - name: Zip artifacts
-        uses: thedoctor0/zip-release@master
+        uses: papeloto/action-zip@v1
         with:
-          filename: 'zwift_rainmeter_plugin_x64.zip'
-          path: 'x64\Release'
-          exclusions: '*.xml *.pdb'
+          files: x64/Release
+          dest: zwift_rainmeter_plugin_x64.zip
 
       - name: Create Release
         id: create_release
