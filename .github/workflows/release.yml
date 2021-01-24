@@ -2,8 +2,10 @@ name: Release
 on: 
   workflow_dispatch:
     inputs:
-      tags:
-        description: 'Unused'  
+      name:
+        description: 'Tag and Version to release as'
+        required: true
+        default: '1.0.0'
 
 jobs:
   build_and_release:
@@ -30,8 +32,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ github.event.inputs.name }}
+          release_name: Release ${{ github.event.inputs.name }}
           draft: false
           prerelease: false
 
