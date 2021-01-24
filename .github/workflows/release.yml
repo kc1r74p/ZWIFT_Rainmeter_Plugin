@@ -21,7 +21,7 @@ jobs:
       - name: Zip artifacts
         uses: papeloto/action-zip@v1
         with:
-          files: x64/Release
+          files: 'D:\a\ZWIFT_Rainmeter_Plugin\ZWIFT_Rainmeter_Plugin\C#\PluginParentChild\x64\Release\'
           dest: zwift_rainmeter_plugin_x64.zip
 
       - name: Create Release
