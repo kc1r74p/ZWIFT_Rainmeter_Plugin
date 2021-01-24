@@ -1,8 +1,12 @@
-name: Build
-on: [push]
+name: Release
+on: 
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Unused'  
 
 jobs:
-  build:
+  build_and_release:
     runs-on: windows-latest
     steps:
       - name: Check out
