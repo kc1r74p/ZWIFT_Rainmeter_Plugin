@@ -5,6 +5,7 @@
 A plugin for Rainmeter to display information about a ZWIFT account
 
 #### Distance/month example rainmeter skin using Plugin
+- Month names and formatting of numbers can be adjusted with a locale in the settings.ini
 ![Simple distance per month example](zwift_rainmeter_api.png)
 
 #### How to use
@@ -36,12 +37,12 @@ A plugin for Rainmeter to display information about a ZWIFT account
 ```
  
 4. Edit settings.inc and add your Rainmeter credentials
-    - Todo: encrypt password on disk/use Windows credentials manager...
+
 5. Restart Rainmeter Process and active Skin
     - This may lag at start due to the fetching of all activities
-    - Todo: Think about async data fetching storing for fast display/reload...
- 
+
 6. (Optional) Adjust Bar.ini or create new skin based on provided values
+
 
 ## Contribute
 There are currently some bad performance limits with the way the data is fetched for each meter, this should be refactored to async fetch data and store it so that reloads are fluid and non blocking.
@@ -50,3 +51,15 @@ As for possible values, the API can provide all information which is available i
 Calories, Activity type (Running, Cycling), Profile info, Level...
 
 Feel free to open PR´s or Issues and enhance this plugin! ❤
+
+## Todos - Which would make this plugin more mature
+ - Encrypt password on disk/use Windows credentials manager
+ - Think about async data fetching storing for fast display/reload
+ - Allow other meters with
+    - Calories
+    - Avg speed
+    - Flag to diff between: Cycling / Running
+    - Zwift Level + Progress
+    - Hours per activity
+    - Total Distance, Calories, Hours
+    - ...
