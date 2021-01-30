@@ -6,6 +6,7 @@ A plugin for Rainmeter to display information about a ZWIFT account
 
 #### Distance/month example rainmeter skin using Plugin
 - Month names and formatting of numbers can be adjusted with a locale in the settings.ini
+
 ![Simple distance per month example](zwift_rainmeter_api.png)
 
 #### How to use
