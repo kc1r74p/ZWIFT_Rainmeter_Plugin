@@ -37,7 +37,7 @@ A plugin for Rainmeter to display information about a ZWIFT account
 │   ├── ...
 ```
  
-4. Edit settings.inc and add your Rainmeter credentials
+4. Edit settings.inc and add your [ZWIFT](https://zwift.com) credentials
 
 5. Restart Rainmeter Process and active Skin
     - This may lag at start due to the fetching of all activities
