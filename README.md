@@ -17,7 +17,7 @@ A plugin for [Rainmeter](https://www.rainmeter.net/) to display information abou
 ├── <Rainmeter_install_path>\Rainmeter
 |   ├── Rainmeter.exe
 │   ├── Plugins
-│   │   ├── ZWIFT_RM_API.dll
+│   │   ├── ZWIFT_RM_API.dll <---
 │   │   ├── ...
 │   ├── ...
 ```
@@ -29,7 +29,7 @@ A plugin for [Rainmeter](https://www.rainmeter.net/) to display information abou
  ```.
 ├── < C:\Users\<USER>\Documents\Rainmeter\Skins
 |   ├── SkinExample
-│   ├── ZWIFT_RM_SKIN
+│   ├── ZWIFT_RM_SKIN <---
 │   │   ├── Bar.ini
 │   │   ├── @Resources
 │   │   │   ├── Variables
@@ -56,6 +56,7 @@ Feel free to open PR´s or Issues and enhance this plugin! ❤
 ## Todos - Which would make this plugin more mature
  - Encrypt password on disk/use Windows credentials manager
  - Think about async data fetching storing for fast display/reload
+ - Only fetch history of activities which are needed for meter instead of all
  - Allow other meters with
     - Calories
     - Avg speed
