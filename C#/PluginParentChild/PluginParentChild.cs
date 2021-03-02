@@ -414,20 +414,23 @@ namespace PluginParentChild
 
         internal override double Update()
         {
-            //retrive value based on type
-            if (distanceDict.Count < 1 || !distanceDict.ContainsKey(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)))
+            if (distanceDict.Count < 1)
                 return 0.0f;
-
 
             switch (Type)
             {
                 case MeasureType.current:
                     {
-                        return distanceDict[new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1)];
+                        var date = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                        if (!distanceDict.ContainsKey(date))
+                            return 0;
+                        return distanceDict[date];
                     }
                 case MeasureType.lastX:
                     {
                         var date = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-pastMonth);
+                        if (!distanceDict.ContainsKey(date))
+                            return 0;
                         return distanceDict[date];
                     }
                 case MeasureType.min:
